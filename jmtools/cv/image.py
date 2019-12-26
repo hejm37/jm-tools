@@ -55,3 +55,17 @@ def display_vid(vid_dir, position=(40, 30), screen_reso=(1080, 1920)):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyWindow(vid_name)
+
+
+def paste_img_at(composited_img, img, row_idx, col_idx, blank_size):
+    '''Paste image to a larger image'''
+
+    # Get paste position
+    composited_h, composited_w, = composited_img.shape[0:2]
+    source_h, source_w = img.shape[0:2]
+    paste_h_start = row_idx * (source_h + blank_size)
+    paste_w_start = col_idx * (source_w + blank_size)
+    paste_h_end = paste_h_start + source_h
+    paste_w_end = paste_w_start + source_w
+
+    composited_img[paste_h_start:paste_h_end, paste_w_start:paste_w_end] = img
