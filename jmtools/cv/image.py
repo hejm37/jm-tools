@@ -1,7 +1,21 @@
 import os
 import cv2
+import mmcv
 
 from ..utils.utils import get_last_segment, read_img_dir
+
+
+def wait_key(wait_time=0):
+    return cv2.waitKey(wait_time) & 0xFF
+
+
+def wait_until(key):
+    while wait_key() != ord(key):
+        pass
+
+
+def wait_until_q():
+    wait_until('q')
 
 
 def get_rescale(shape, screen_reso=(1080, 1920)):
@@ -13,28 +27,38 @@ def get_rescale(shape, screen_reso=(1080, 1920)):
     return rescale
 
 
-def wait_until(key):
-    while cv2.waitKey(0) & 0xFF != ord(key):
-        pass
+def get_ori_coordinate(coor_resized, origin_shape, screen_reso=(1080, 1920)):
+    '''Return the coordinate in origin resolution'''
+    rescale = get_rescale(origin_shape, screen_reso)
+    x_resized, y_resized = coor_resized
+    x = x_resized / rescale
+    y = y_resized / rescale
+
+    return int(x), int(y)
 
 
-def wait_until_q():
-    wait_until('q')
-
-
-def read_resized_img(img_path, screen_reso=(1080, 1920)):
-    img = cv2.imread(img_path)
+def resize_img(img, screen_reso=(1080, 1920)):
     shape = img.shape[:2]
     rescale = get_rescale(shape)
 
     return cv2.resize(img, None, fx=rescale, fy=rescale)
 
 
-def display_img(img_path, position=(40, 30), screen_reso=(1080, 1920)):
-    img = read_resized_img(img_path, screen_reso)
+def read_resized_img(img_or_path, screen_reso=(1080, 1920)):
+    img = mmcv.imread(img_or_path)
 
-    img_id = get_last_segment(img_path)
-    winname = img_id[:-4]
+    return resize_img(img, screen_reso)
+
+
+def display_img(img_or_path,
+                winname=None,
+                position=(40, 30),
+                screen_reso=(1080, 1920)):
+    img = read_resized_img(img_or_path, screen_reso)
+
+    if mmcv.is_str(img_or_path) and winname is None:
+        img_id = get_last_segment(img_or_path)
+        winname = img_id[:-4]
     cv2.namedWindow(winname)
     cv2.moveWindow(winname, position[0], position[1])
     cv2.imshow(winname, img)
@@ -52,7 +76,7 @@ def display_vid(vid_dir, position=(40, 30), screen_reso=(1080, 1920)):
         img_path = os.path.join(vid_dir, img_id)
         img = read_resized_img(img_path, screen_reso)
         cv2.imshow(vid_name, img)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if wait_key(1) == ord('q'):
             break
     cv2.destroyWindow(vid_name)
 
@@ -69,3 +93,27 @@ def paste_img_at(composited_img, img, row_idx, col_idx, blank_size):
     paste_w_end = paste_w_start + source_w
 
     composited_img[paste_h_start:paste_h_end, paste_w_start:paste_w_end] = img
+
+
+def get_palette(num_cls):
+    """ Returns the color map for visualizing the segmentation mask.
+    Args:
+        num_cls: Number of classes
+    Returns:
+        The color map
+    """
+    n = num_cls
+    palette = [0] * (n * 3)
+    for j in range(0, n):
+        lab = j
+        palette[j * 3 + 0] = 0
+        palette[j * 3 + 1] = 0
+        palette[j * 3 + 2] = 0
+        i = 0
+        while lab:
+            palette[j * 3 + 0] |= (((lab >> 0) & 1) << (7 - i))
+            palette[j * 3 + 1] |= (((lab >> 1) & 1) << (7 - i))
+            palette[j * 3 + 2] |= (((lab >> 2) & 1) << (7 - i))
+            i += 1
+            lab >>= 3
+    return palette
