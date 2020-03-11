@@ -5,3 +5,6 @@ notebook
 
 # vscode
 .vscode
+
+# python
+*.pyc
