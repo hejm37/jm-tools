@@ -8,3 +8,6 @@ notebook
 
 # python
 *.pyc
+
+# mac files
+.DS_Store
