@@ -2,8 +2,12 @@ import os
 import base64
 
 
-def listdir(dir):
+def listdir(dir, dir_only=False):
     filelist = os.listdir(dir)
+    if dir_only:
+        filelist = [
+            item for item in filelist if os.path.isdir(join(dir, item))
+        ]
     filelist.sort()
     return filelist
 

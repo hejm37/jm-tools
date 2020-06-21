@@ -1,6 +1,7 @@
 import os
 import cv2
 import mmcv
+import numpy as np
 
 from ..utils.utils import get_last_segment, read_img_dir
 
@@ -93,6 +94,33 @@ def paste_img_at(composited_img, img, row_idx, col_idx, blank_size):
     paste_w_end = paste_w_start + source_w
 
     composited_img[paste_h_start:paste_h_end, paste_w_start:paste_w_end] = img
+
+
+def composite_imgs(imgs, layout, blank_size=0, unit_resolution=None):
+    row, col = layout
+
+    source_shape = imgs[0].shape
+    if unit_resolution is not None:
+        unit_h, unit_w = unit_resolution
+    else:
+        unit_h, unit_w = source_shape[:2]
+    target_h = unit_h * row + blank_size * (row-1)
+    target_w = unit_w * col + blank_size * (col-1)
+    target_shape = [target_h, target_w]
+
+    # Get size of other channels
+    for i in range(2, len(source_shape)):
+        target_shape.append(source_shape[i])
+    composited_img = np.zeros(tuple(target_shape), imgs[0].dtype)
+    for i in range(row):
+        for j in range(col):
+            img_id = i * col + j
+            if img_id >= len(imgs):
+                break
+            img = imgs[img_id]
+            img = cv2.resize(img, (unit_w, unit_h))
+            paste_img_at(composited_img, img, i, j, blank_size)
+    return composited_img
 
 
 def get_palette(num_cls):
