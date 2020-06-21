@@ -9,14 +9,11 @@ from .image import paste_img_at
 from jmtools.utils.utils import read_img_dir, join
 
 
-def get_video_writer(vid_path,
-                     shape,
-                     fps=25,
-                     fourcc='XVID'):
+def get_video_writer(vid_path, shape, fps=25, fourcc='XVID'):
     height, width = shape[0], shape[1]
     resulotion = width, height
-    return cv2.VideoWriter(vid_path, cv2.VideoWriter_fourcc(*fourcc),
-                           fps, resulotion)
+    return cv2.VideoWriter(vid_path, cv2.VideoWriter_fourcc(*fourcc), fps,
+                           resulotion)
 
 
 def composite_clips(vid_paths,
@@ -43,8 +40,8 @@ def composite_clips(vid_paths,
         unit_h, unit_w = unit_resolution
     else:
         unit_h, unit_w = source_shape[0], source_shape[1]
-    target_h = unit_h * row + blank_size * (row-1)
-    target_w = unit_w * col + blank_size * (col-1)
+    target_h = unit_h * row + blank_size * (row - 1)
+    target_w = unit_w * col + blank_size * (col - 1)
     target_shape = [target_h, target_w]
 
     # Get size of other channels
@@ -70,7 +67,7 @@ def composite_clips(vid_paths,
     vwriter.release()
 
 
-def seg_to_matte_dir(source_dir, target_dir, single_object=False):
+def seg_to_matte_dir(source_dir, target_dir, single_object=False, auto=True):
     img_ids = read_img_dir(source_dir)
 
     for img_id in img_ids:
@@ -82,5 +79,11 @@ def seg_to_matte_dir(source_dir, target_dir, single_object=False):
         if single_object:
             matte[seg == 1] = 255
         else:
-            matte[seg >= 1] = 255
+            if auto:
+                # in auto mode, treat other labels as unknown,
+                # let matting model decide if they are fg
+                matte[seg == 1] = 255
+                matte[seg >= 2] = 128
+            else:
+                matte[seg >= 1] = 255
         mmcv.imwrite(matte, matte_path)

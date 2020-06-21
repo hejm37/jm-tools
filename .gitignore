@@ -11,3 +11,6 @@ notebook
 
 # python package egg-info
 *egg-info/
+
+# mac files
+.DS_Store
