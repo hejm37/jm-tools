@@ -8,3 +8,6 @@ notebook
 
 # python
 *.pyc
+
+# python package egg-info
+*egg-info/
